@@ -1,3 +1,6 @@
+You should integrate the additional repositories, android block with compile options, and dependencies sections into your existing `build.gradle` file as follows, ensuring they are placed in the appropriate sections for clarity and organization:
+
+```gradle
 apply plugin: 'com.android.application'
 
 android {
@@ -10,7 +13,6 @@ android {
 
         flavorDimensions "versionCode"
         multiDexEnabled false
-
 
         buildConfigField "boolean", "IS_TEST_BUILD", "false"
         buildConfigField "boolean", "IS_GPLAY_BUILD", "false"
@@ -35,11 +37,11 @@ android {
         }
 
         flavorAtest {
-          buildConfigField "boolean", "IS_NIGHTLY_BUILD", "true"
-          versionCode = Integer.parseInt(new Date().format('yyMMdd'))
-          versionName = new Date().format('yyMMdd')
-          applicationId "com.benny.openlauncher.nightly"
-          resValue 'string', 'app_name', "OL Nightly"
+            buildConfigField "boolean", "IS_NIGHTLY_BUILD", "true"
+            versionCode = Integer.parseInt(new Date().format('yyMMdd'))
+            versionName = new Date().format('yyMMdd')
+            applicationId "com.benny.openlauncher.nightly"
+            resValue 'string', 'app_name', "OL Nightly"
         }
     }
 
@@ -123,8 +125,23 @@ dependencies {
     for (anpro in anpros) {
         annotationProcessor anpro
     }
+
+    // New repositories and dependencies
+    repositories {
+        maven { url 'https://jitpack.io' }
+    }
+
+    dependencies {
+        implementation 'com.github.farmerbb:libtaskbar:2.2.0' // see badge above for latest version
+    }
 }
 
 repositories {
     mavenCentral()
 }
+```
+
+### Explanation:
+
+1. **Plugin and Android Block:**
+   - The `apply plugin: 'com.android.application'` plugin
