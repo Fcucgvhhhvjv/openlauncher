@@ -1,68 +1,88 @@
-##############################################################################################################################
-# # Cleanup:
-#const sleep = ms => () => new Promise((resolve, reject) => window.setTimeout(resolve, ms));
-#Promise.resolve()
-#.then(() => {  document.getElementsByClassName("details-overlay details-reset position-relative d-inline-block ")[3].children[0].click();  })
-#.then(sleep(500))
-#.then(() => {  document.getElementsByClassName("dropdown-item btn-link menu-item-danger")[0].click();  })
-#.then(sleep(1000))
-#.then(() => {  document.getElementsByClassName("btn btn-block btn-danger")[0].click();});
-#
-# while [ 1 ] ; do sleep 4; xdotool key Up; sleep 0.1; xdotool key Return; done
-##############################################################################################################################
+name: Android CI
 
-name: "CI"
-
-on: [push, pull_request]
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
 
 jobs:
   build:
-    if: "!contains(github.event.head_commit.message, 'ci skip') && (!contains(github.event_name, 'pull_request') || (contains(github.event_name, 'pull_request') && github.event.pull_request.head.repo.full_name != github.repository))"
+
     runs-on: ubuntu-latest
+
     steps:
-
-    - name: "Checkout: Code"
-      uses: actions/checkout@v2
-
-
-    - name: "Checkout: Code (PR)"
-      uses: actions/checkout@v2
-      if: "contains(github.event_name, 'pull_request')"
+    - uses: actions/checkout@v3
+    - name: set up JDK 11
+      uses: actions/setup-java@v3
       with:
-        ref: ${{github.event.pull_request.head.ref}}
-        repository: ${{github.event.pull_request.head.repo.full_name}}
+        java-version: '11'
+        distribution: 'temurin'
+        cache: gradle
 
-    - name: "Setup: Java"
-      uses: actions/setup-java@v1
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew && ls
+    
+ #   - name: move directory
+#      run: ls && mv Xc/app/src/main/assets app/src/main/
+    
+ #   - name: list
+ #     run: ls app/src/main && du -sh app/src/main 
+ 
+      
+    - name: Set current date as env variable
+
+      run: echo "date_today=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+
+      
+
+    - name: Set repository name as env variable
+
+      run: echo "repository_name=$(echo '${{ github.repository }}' | awk -F '/' '{print $2}')" >> $GITHUB_ENV
+
+      
+   
+    - name: Build with Gradle
+      run: ./gradlew build
+      
+    - name: build the apk 
+      run: ./gradlew assembleDebug
+     
+#    - name: Build apk release project (APK) - ${{ env.main_project_module }} module
+
+#      run: ./gradlew assemble
+
+      
+
+    - name: Check built apk 
+      run: ls app/build/outputs/ && ls app/build/outputs/apk/* && du -sh app/build/outputs/apk/*
+    - name: Upload APK Debug - ${{ env.repository_name }}
+
+      uses: actions/upload-artifact@v3
+
       with:
-        java-version: 1.8
 
-    - name: "Cache: Gradle"
-      uses: actions/cache@v2
+          name: ${{ env.date_today }} - ${{ env.playstore_name }} - ${{ env.repository_name }} - APK(s) debug generated
+
+          path: app/build/outputs/apk/debug/
+
+    - name: Upload APK Release - ${{ env.repository_name }}
+
+      uses: actions/upload-artifact@v3
+
       with:
-        path: |
-          ~/.gradle
-          .gradle
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('gradle/wrapper/gradle-wrapper.*') }}
 
-    - name: "Build: Project with make"
-      run: make clean all
+          name: ${{ env.date_today }} - ${{ env.playstore_name }} - ${{ env.repository_name }} - APK(s) release generated
 
-    - name: "Build: List dist files"
-      if: always()
-      run: find dist -type f -maxdepth 2
+          path: app/build/outputs/apk/release/
 
-    - name: "Artifacts: All"
-      if: always()
-      uses: actions/upload-artifact@v2.2.1
-      with:
-        name: "all"
-        path: dist
-        retention-days: 5
+#    - name: Upload AAB (App Bundle) Release - ${{ env.repository_name }}
 
-    - name: "Artifacts: Android APK"
-      uses: actions/upload-artifact@v2.2.1
-      with:
-        name: "android-apk"
-        path: |
-          dist/*.apk
+#      uses: actions/upload-artifact@v3
+
+#      with:
+
+#          name: ${{ env.date_today }} - ${{ env.playstore_name }} - ${{ env.repository_name }} - App bundle(s) AAB release generated
+
+#          path: ${{ env.main_project_module }}/build/outputs/bundle/release/
+     
